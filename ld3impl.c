@@ -117,18 +117,45 @@ int main(int argc, const char* argv[])
                     uint16_t sr2 = instr & 0x7;
                     reg[dr] = reg[sr1] + reg[sr2];
                 }
-                update_flags(dr);
+                update_flags(reg[dr]);
                 
 
                 break;
             case OP_AND:
                 /* AND goes here*/
+                uint16_t dr = (instr >> 9) & 0x7;
+                uint16_t sr1 = (instr >> 6) & 0x7;
+                uint16_t imm_flag = (instr >> 5) & 1;
+
+                if (imm_flag)
+                {
+                    uint16_t imm5 = (instr & 0x1F, 5);
+                    reg[dr] = reg[sr1] & imm5;
+                }
+                else
+                {
+                    uint16_t sr2 = instr & 0x7;
+                    reg[dr] = reg[sr1] & reg[sr2];
+                }
+                update_flags(reg[dr]);
                 break;
             case OP_NOT:
                 /* NOT goes here */
+
+                uint16_t dr = (instr >> 9) & 0x7;
+                uint16_t sr = (instr >> 6) & 0x7;
+
+                reg[dr] = !(reg[sr]);
+                update_flags(reg[dr]);
                 break;
             case OP_BR:
                 /* BR goes here*/
+                uint16_t cond_flag = (instr >> 9) & 0x7;
+                uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
+                if (cond_flag & reg[R_COND])
+                {
+                    reg[R_PC] += pc_offset;
+                }
                 break;
             case OP_JMP:
                 /* JMP goes here*/
@@ -154,6 +181,10 @@ int main(int argc, const char* argv[])
                 break;
             case OP_LD:
                 /* LD goes here */
+                uint16_t dr = (instr >> 9) & 0x7;
+                uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
+                reg[dr] = mem_read(reg[R_PC] + pc_offset);
+                update_flags(reg[dr]);
                 break;
             case OP_LDI:
                 /* LDI goes here */
@@ -161,33 +192,59 @@ int main(int argc, const char* argv[])
                 uint16_t dr = (instr >> 9) & 0x7;
                 uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
                 reg[dr] = mem_read(mem_read(reg[R_PC] + pc_offset));
-                update_flags(dr);
+                update_flags(reg[dr]);
                 break;
             case OP_LDR:
                 /* LDR goes here */
+                uint16_t dr = (instr >> 9) & 0x7;
+                uint16_t baseR = (instr >> 6) & 0x7;
+                uint16_t offset = sign_extend(instr & 0x3F, 6);
+
+                reg[dr] = mem_read(reg[baseR] + offset);
+                update_flags(reg[dr]); 
+
                 break;
             case OP_LEA:
                 /* LEA goes here */
-
                 uint16_t dr = (instr >> 9) & 0x7;
                 uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
 
                 dr = reg[R_PC] + pc_offset;
-                update_flags(dr);
+                update_flags(reg[dr]);
                 break;
             case OP_ST:
                 /* ST goes here*/
+                uint16_t sr = (instr >> 9) & 0x7;
+                uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
+                mem_write(reg[sr], reg[R_PC] + pc_offset);
+                break;
+            case OP_STI:
+                /* STI goes here*/
+                uint16_t sr = (instr >> 9) & 0x7;
+                uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
+
+
+                mem_write(mem_read(reg[R_PC] + pc_offset), reg[sr]);
                 break;
             case OP_STR:
                 /* STR goes here*/
+                uint16_t sr = (instr >> 9) & 0x7;
+                uint16_t baseR = (instr >> 6) & 0x7;
+                uint16_t offset = sign_extend(instr & 0x3F, 6);
+
+                mem_write(reg[sr], reg[baseR] + offset);
                 break;
             case OP_TRAP:
                 /* TRAP goes here*/
+                reg[R_R7] = reg[R_PC];
+                uint16_t trapvect8 = instr & 0xFF;
+                reg[R_PC] = mem_read(trapvect8);
                 break;
             case OP_RES:
             case OP_RTI:
             default:
                 /* BAD OPCODE goes here*/
+                abort();
                 break;
 
         }
