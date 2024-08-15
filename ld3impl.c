@@ -95,6 +95,7 @@ int main(int argc, const char* argv[])
         uint16_t instr = mem_read(reg[R_PC]++);
         uint16_t op = instr >> 12;
 
+        //OPCODE implements
         switch (op)
         {
             case OP_ADD:
@@ -117,7 +118,7 @@ int main(int argc, const char* argv[])
                     uint16_t sr2 = instr & 0x7;
                     reg[dr] = reg[sr1] + reg[sr2];
                 }
-                update_flags(reg[dr]);
+                update_flags(dr);
                 
 
                 break;
@@ -137,7 +138,7 @@ int main(int argc, const char* argv[])
                     uint16_t sr2 = instr & 0x7;
                     reg[dr] = reg[sr1] & reg[sr2];
                 }
-                update_flags(reg[dr]);
+                update_flags(dr);
                 break;
             case OP_NOT:
                 /* NOT goes here */
@@ -146,13 +147,13 @@ int main(int argc, const char* argv[])
                 uint16_t sr = (instr >> 6) & 0x7;
 
                 reg[dr] = !(reg[sr]);
-                update_flags(reg[dr]);
+                update_flags(dr);
                 break;
             case OP_BR:
                 /* BR goes here*/
                 uint16_t cond_flag = (instr >> 9) & 0x7;
                 uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
-                if (cond_flag & reg[R_COND])
+                if (cond_flag & reg[R_COND]) //nonzeros are true too...
                 {
                     reg[R_PC] += pc_offset;
                 }
@@ -170,7 +171,7 @@ int main(int argc, const char* argv[])
 
                 if (offset_flag)
                 {
-                    uint16_t pc_offset = sign_extend(instr & 0x3FF, 10);
+                    uint16_t pc_offset = sign_extend(instr & 0x7FF, 11);
                     reg[R_PC] += pc_offset;
                 }
                 else
@@ -184,7 +185,7 @@ int main(int argc, const char* argv[])
                 uint16_t dr = (instr >> 9) & 0x7;
                 uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
                 reg[dr] = mem_read(reg[R_PC] + pc_offset);
-                update_flags(reg[dr]);
+                update_flags(dr);
                 break;
             case OP_LDI:
                 /* LDI goes here */
@@ -192,7 +193,7 @@ int main(int argc, const char* argv[])
                 uint16_t dr = (instr >> 9) & 0x7;
                 uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
                 reg[dr] = mem_read(mem_read(reg[R_PC] + pc_offset));
-                update_flags(reg[dr]);
+                update_flags(dr);
                 break;
             case OP_LDR:
                 /* LDR goes here */
@@ -201,7 +202,7 @@ int main(int argc, const char* argv[])
                 uint16_t offset = sign_extend(instr & 0x3F, 6);
 
                 reg[dr] = mem_read(reg[baseR] + offset);
-                update_flags(reg[dr]); 
+                update_flags(dr); 
 
                 break;
             case OP_LEA:
@@ -209,20 +210,20 @@ int main(int argc, const char* argv[])
                 uint16_t dr = (instr >> 9) & 0x7;
                 uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
 
-                dr = reg[R_PC] + pc_offset;
-                update_flags(reg[dr]);
+                reg[dr] = reg[R_PC] + pc_offset;
+                update_flags(dr);
                 break;
             case OP_ST:
                 /* ST goes here*/
                 uint16_t sr = (instr >> 9) & 0x7;
                 uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
+                
                 mem_write(reg[sr], reg[R_PC] + pc_offset);
                 break;
             case OP_STI:
                 /* STI goes here*/
                 uint16_t sr = (instr >> 9) & 0x7;
                 uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
-
 
                 mem_write(mem_read(reg[R_PC] + pc_offset), reg[sr]);
                 break;
