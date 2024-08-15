@@ -56,6 +56,17 @@ enum
     FL_NEG = 1 << 2, /* N */
 };
 
+//TRAP codes
+enum
+{
+    TRAP_GETC = 0x20, /* get character from keyboard, not echoed onto the terminal*/
+    TRAP_OUT, /* output a character*/
+    TRAP_PUTS, /* output a word string*/
+    TRAP_IN, /* get character from keyboard, echoed onto the terminal*/
+    TRAP_PUTSP, /* output a byte string*/
+    TRAP_HALT /* halt the program*/
+};
+
 //Main Loop
 
 //Prototyping
@@ -217,7 +228,7 @@ int main(int argc, const char* argv[])
                 /* ST goes here*/
                 uint16_t sr = (instr >> 9) & 0x7;
                 uint16_t pc_offset = sign_extend(instr & 0x1FF, 9);
-                
+
                 mem_write(reg[sr], reg[R_PC] + pc_offset);
                 break;
             case OP_STI:
