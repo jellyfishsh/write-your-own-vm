@@ -249,8 +249,42 @@ int main(int argc, const char* argv[])
             case OP_TRAP:
                 /* TRAP goes here*/
                 reg[R_R7] = reg[R_PC];
-                uint16_t trapvect8 = instr & 0xFF;
-                reg[R_PC] = mem_read(trapvect8);
+                switch (instr & 0xFF)
+                {
+                    case TRAP_GETC:
+                        //does a single get character exist?
+                        reg[R_R0] = getc(stdin) & 0xFF;
+                        fflush(stdin);
+                    break;
+
+                    case TRAP_OUT:
+                        putc((char)reg[R_R0], stdout);
+                        fflush(stdout);
+                    break;
+
+                    case TRAP_PUTS:
+                        uint16_t* c = memory + reg[R_R0];
+                        while (*c){
+                            putc((char)*c, stdout);
+                            ++c;
+                        }
+                        fflush(stdout);
+                    break;
+
+                    case TRAP_IN:
+                        putc('>', stdout);
+                        fflush(stdout);
+                        putc(getc(stdin), stdout);
+                    break;
+
+                    case TRAP_PUTSP:
+
+                    break;
+                    case TRAP_HALT:
+                        printf("Halting execution.\n");
+                        exit(0);
+                    break;
+                }
                 break;
             case OP_RES:
             case OP_RTI:
