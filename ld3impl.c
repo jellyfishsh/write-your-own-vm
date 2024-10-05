@@ -67,6 +67,13 @@ enum
     TRAP_HALT /* halt the program*/
 };
 
+enum
+{
+    MR_KBSR = 0xFE00,
+    MR_KBDR = 0xFE02
+
+};
+
 //Main Loop
 
 //Prototyping
@@ -253,8 +260,9 @@ int main(int argc, const char* argv[])
                 {
                     case TRAP_GETC:
                         //does a single get character exist?
-                        reg[R_R0] = getc(stdin) & 0xFF;
+                        reg[R_R0] = (uint16_t)getc(stdin);
                         fflush(stdin);
+                        update_flags(R_R0);
                     break;
 
                     case TRAP_OUT:
@@ -274,15 +282,27 @@ int main(int argc, const char* argv[])
                     case TRAP_IN:
                         putc('>', stdout);
                         fflush(stdout);
-                        putc(getc(stdin), stdout);
+                        char c = getc(stdin);
+                        putc(c, stdout);
+                        reg[R_R0] = (uint16_t)c;
+                        update_flags;
                     break;
 
                     case TRAP_PUTSP:
+                        uint16_t* c = memory + reg[R_R0];
+                        while (*c){
 
+                            char char1 = *c & 0xFF;
+                            putc(char1, stdout);
+                            char char2 = *c & 0xFF00;
+                            if (char2) putc(char2, stdout);
+                            c++;
+                        }
+                        fflush(stdout);
                     break;
                     case TRAP_HALT:
                         printf("Halting execution.\n");
-                        exit(0);
+                        running = 0;
                     break;
                 }
                 break;
@@ -320,4 +340,36 @@ void update_flags(uint16_t r)
     {
         reg[R_COND] = FL_POS;
     }
+}
+
+void read_image_file(FILE* file){
+    uint16_t origin;
+    fread(&origin, sizeof(origin), 1, file);
+
+    //swap16 swaps from little endian to big endian, and vice versa
+    origin = swap16(origin);
+
+    /* this defines where we will start putting our instructions in memory */
+    uint16_t max_read = MEMORY_MAX - origin;
+    uint16_t* p = memory + origin;
+    size_t read = fread(p, sizeof(uint16_t), max_read, file);
+
+    while (read-- > 0){
+        *p = swap16(*p);
+        p++;
+    }
+
+}
+
+int read_image(const char* image_path) {
+    FILE* file = fopen(image_path, "rb");
+    if (!file) {return 0;};
+    read_image_file(file);
+    fclose(file);
+    return 1;
+
+}
+
+uint16_t swap16(uint16_t x){
+    return ((x << 8) | (x >> 8));
 }
