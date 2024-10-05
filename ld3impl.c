@@ -395,12 +395,14 @@ int main(int argc, const char* argv[])
                     break;
 
                     case TRAP_IN:
-                        putc('>', stdout);
-                        fflush(stdout);
-                        c = getc(stdin);
+                        // putc('>', stdout);
+                        // fflush(stdout);pri
+                        printf("> ");
+                        c = getchar;
                         putc(c, stdout);
+                        fflush(stdout);
                         reg[R_R0] = (uint16_t)c;
-                        update_flags;
+                        update_flags(R_R0);
                     break;
 
                     case TRAP_PUTSP:
